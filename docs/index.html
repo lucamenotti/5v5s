@@ -3,35 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Player Stats Analysis</title>
+    <title>Player Stats</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* Custom CSS */
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            padding: 20px;
         }
-        h1, h2 {
-            color: #333;
+        .stats-container {
+            margin-top: 20px;
         }
-        .player {
-            margin-bottom: 20px;
-        }
-        .teammates {
-            margin-left: 20px;
+        .loading {
+            text-align: center;
+            margin-top: 50px;
         }
     </style>
 </head>
 <body>
-    <h1>Player Stats Analysis</h1>
-    <div id="output"></div>
+    <div class="container">
+        <h1 class="text-center">Player Stats</h1>
+        <div class="dropdown mt-3">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="playerDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Select Player
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="playerDropdown">
+                <!-- Dropdown items will be populated dynamically -->
+            </ul>
+        </div>
+        <div class="stats-container">
+            <!-- Player stats will be displayed here -->
+            <div id="playerStats" class="mt-4"></div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">Loading data, please wait...</div>
 
     <script>
-        // Configuration for the GitHub repository
+        // GitHub repository details
         const owner = 'lucamenotti';
         const repo = '5v5s';
-        const branch = 'main';  // Or any other branch you want to fetch from
-        const api_url = `https://api.github.com/repos/${owner}/${repo}/contents`;
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents`;
 
-        // Alias mapping (key: alias, value: primary name)
+        // Function to fetch JSON files from GitHub
+        async function fetchFilesFromGitHub(path = '') {
+            const response = await fetch(`${apiUrl}/${path}`);
+            const files = await response.json();
+            const jsonFiles = [];
+
+            for (const file of files) {
+                if (file.type === 'file' && file.name.endsWith('.json')) {
+                    jsonFiles.push(file.download_url);
+                } else if (file.type === 'dir') {
+                    jsonFiles.push(...await fetchFilesFromGitHub(file.path));
+                }
+            }
+
+            return jsonFiles;
+        }
+
+        // Function to fetch JSON data from URL
+        async function fetchJsonFromUrl(url) {
+            const response = await fetch(url);
+            return await response.json();
+        }
+
+        // Player stats and alias mapping
         const playerAliases = {
             'EnderDragon7474': 'Ashalo1',
             'Ashalo1': 'Ashalo1',
@@ -42,149 +78,109 @@
             // Add more mappings as needed
         };
 
+        // Function to get primary player name
         function getPrimaryName(name) {
             return playerAliases[name] || name;
         }
 
-        async function fetchFilesFromGitHub(apiUrl, path = '') {
-            const response = await fetch(`${apiUrl}/${path}`);
-            if (response.ok) {
-                const data = await response.json();
-                let files = [];
-                for (const item of data) {
-                    if (item.type === 'file' && item.name.endsWith('.json')) {
-                        files.push(item.download_url);
-                    } else if (item.type === 'dir') {
-                        const subFiles = await fetchFilesFromGitHub(apiUrl, item.path);
-                        files = files.concat(subFiles);
-                    }
-                }
-                return files;
-            } else {
-                console.error(`Failed to fetch files: ${response.status}`);
-                return [];
-            }
-        }
-
-        async function fetchJsonFromUrl(url) {
-            const response = await fetch(url);
-            if (response.ok) {
-                return await response.json();
-            } else {
-                console.error(`Failed to fetch JSON from ${url}: ${response.status}`);
-                return null;
-            }
-        }
-
-        async function processData() {
-            const jsonFilesUrls = await fetchFilesFromGitHub(api_url);
-
+        // Function to fetch and process player data
+        async function fetchAndProcessPlayerData() {
+            const jsonFilesUrls = await fetchFilesFromGitHub();
             const playerStats = {};
-            const teammateCounts = {};
 
-            for (const fileUrl of jsonFilesUrls) {
-                const match = await fetchJsonFromUrl(fileUrl);
+            for (const url of jsonFilesUrls) {
+                const match = await fetchJsonFromUrl(url);
+
                 if (match && match.participants) {
-                    const teams = {};
+                    const participants = match.participants;
 
-                    for (const player of match.participants) {
-                        if (!player.NAME || !player.TEAM) continue;
+                    for (const player of participants) {
+                        if (player.NAME) {
+                            const primaryName = getPrimaryName(player.NAME);
+                            const team = player.TEAM;
 
-                        const primaryName = getPrimaryName(player.NAME);
-                        const teamId = player.TEAM;
-
-                        if (!teams[teamId]) {
-                            teams[teamId] = [];
-                        }
-                        teams[teamId].push(primaryName);
-
-                        if (!playerStats[primaryName]) {
-                            playerStats[primaryName] = {
-                                wins: 0,
-                                losses: 0,
-                                kills: 0,
-                                deaths: 0,
-                                assists: 0,
-                                matches: 0,
-                                total_kills: 0,
-                                penta_kills: 0,
-                                games_played: 0
-                            };
-                        }
-
-                        playerStats[primaryName].matches += 1;
-                        playerStats[primaryName].kills += parseInt(player.CHAMPIONS_KILLED || 0);
-                        playerStats[primaryName].assists += parseInt(player.ASSISTS || 0);
-                        playerStats[primaryName].deaths += parseInt(player.NUM_DEATHS || 0);
-                        playerStats[primaryName].total_kills += parseInt(player.CHAMPIONS_KILLED || 0);
-                        playerStats[primaryName].penta_kills += parseInt(player.PENTA_KILLS || 0);
-                        playerStats[primaryName].games_played += 1;
-
-                        if (player.WIN === 'Win') {
-                            playerStats[primaryName].wins += 1;
-                        } else {
-                            playerStats[primaryName].losses += 1;
-                        }
-
-                        if (!teammateCounts[primaryName]) {
-                            teammateCounts[primaryName] = {};
-                        }
-                    }
-
-                    for (const teamId in teams) {
-                        const teammates = teams[teamId];
-                        for (const playerName of teammates) {
-                            for (const teammate of teammates) {
-                                if (teammate !== playerName) {
-                                    if (!teammateCounts[playerName][teammate]) {
-                                        teammateCounts[playerName][teammate] = 0;
-                                    }
-                                    teammateCounts[playerName][teammate] += 1;
-                                }
+                            if (!playerStats[primaryName]) {
+                                playerStats[primaryName] = {
+                                    matches: 0,
+                                    wins: 0,
+                                    losses: 0,
+                                    kills: 0,
+                                    deaths: 0,
+                                    assists: 0,
+                                    penta_kills: 0,
+                                    teammates: {}
+                                };
                             }
+
+                            playerStats[primaryName].matches++;
+                            playerStats[primaryName].kills += parseInt(player.CHAMPIONS_KILLED || 0);
+                            playerStats[primaryName].assists += parseInt(player.ASSISTS || 0);
+                            playerStats[primaryName].deaths += parseInt(player.NUM_DEATHS || 0);
+                            playerStats[primaryName].penta_kills += parseInt(player.PENTA_KILLS || 0);
+
+                            if (player.WIN === 'Win') {
+                                playerStats[primaryName].wins++;
+                            } else {
+                                playerStats[primaryName].losses++;
+                            }
+
+                            participants.forEach(teammate => {
+                                if (teammate.TEAM === team && teammate.NAME !== player.NAME) {
+                                    const teammateName = getPrimaryName(teammate.NAME);
+                                    playerStats[primaryName].teammates[teammateName] = (playerStats[primaryName].teammates[teammateName] || 0) + 1;
+                                }
+                            });
                         }
                     }
                 }
             }
 
-            displayResults(playerStats, teammateCounts);
+            return playerStats;
         }
 
-        function displayResults(playerStats, teammateCounts) {
-            const output = document.getElementById('output');
-            output.innerHTML = '';
-
-            for (const player in playerStats) {
-                const stats = playerStats[player];
-                stats.win_rate = (stats.wins / stats.matches * 100).toFixed(2);
-                stats.avg_kills_per_match = (stats.kills / stats.matches).toFixed(2);
-                const avg_kda = ((stats.kills + stats.assists) / (stats.deaths || 1)).toFixed(2);
-
-                const playerDiv = document.createElement('div');
-                playerDiv.className = 'player';
-                playerDiv.innerHTML = `
-                    <h2>${player}</h2>
-                    <p>Win Rate: ${stats.win_rate}%</p>
-                    <p>Games Played: ${stats.games_played}</p>
-                    <p>Average Kills per Match: ${stats.avg_kills_per_match}</p>
-                    <p>Average KDA: ${avg_kda}</p>
-                `;
-                output.appendChild(playerDiv);
-
-                if (teammateCounts[player]) {
-                    const teammateDiv = document.createElement('div');
-                    teammateDiv.className = 'teammates';
-                    teammateDiv.innerHTML = '<h3>Teammates:</h3>';
-                    for (const teammate in teammateCounts[player]) {
-                        teammateDiv.innerHTML += `<p>${teammate}: ${teammateCounts[player][teammate]} games</p>`;
-                    }
-                    playerDiv.appendChild(teammateDiv);
-                }
-            }
+        // Function to load player stats into the page
+        function loadPlayerStats(playerName, stats) {
+            const container = document.getElementById('playerStats');
+            container.innerHTML = `
+                <h3>Stats for ${playerName}</h3>
+                <p><strong>Games Played:</strong> ${stats.matches}</p>
+                <p><strong>Wins:</strong> ${stats.wins}</p>
+                <p><strong>Losses:</strong> ${stats.losses}</p>
+                <p><strong>Kills:</strong> ${stats.kills}</p>
+                <p><strong>Deaths:</strong> ${stats.deaths}</p>
+                <p><strong>Assists:</strong> ${stats.assists}</p>
+                <p><strong>Penta Kills:</strong> ${stats.penta_kills}</p>
+                <h4>Teammates</h4>
+                <ul>
+                    ${Object.keys(stats.teammates).map(teammate => `<li>${teammate}: ${stats.teammates[teammate]} games</li>`).join('')}
+                </ul>
+            `;
         }
 
-        // Start the data processing
-        processData();
+        // Function to initialize the dropdown menu and load player data
+        async function initialize() {
+            const loadingIndicator = document.getElementById('loading');
+            const playerStats = await fetchAndProcessPlayerData();
+            const playerNames = Object.keys(playerStats).sort();
+
+            const dropdownMenu = document.querySelector('.dropdown-menu');
+            playerNames.forEach(playerName => {
+                const playerItem = document.createElement('a');
+                playerItem.className = 'dropdown-item';
+                playerItem.href = '#';
+                playerItem.innerText = playerName;
+
+                playerItem.addEventListener('click', () => loadPlayerStats(playerName, playerStats[playerName]));
+
+                dropdownMenu.appendChild(playerItem);
+            });
+
+            loadingIndicator.style.display = 'none';
+        }
+
+        // Initialize the dropdown and load data
+        initialize();
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
