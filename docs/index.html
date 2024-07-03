@@ -118,7 +118,9 @@
 									penta_kills: 0,
 									teammates: {},
 									skins: new Set(), // To store unique characters played
-									teammateWinRates: [] // To store the win rates of teammates
+									teammateWinRates: [], // To store the win rates of teammates
+									WinRate: 0,
+									kda: 0
 								};
 							}
 
@@ -127,7 +129,6 @@
 							playerStats[primaryName].assists += parseInt(player.ASSISTS || 0);
 							playerStats[primaryName].deaths += parseInt(player.NUM_DEATHS || 0);
 							playerStats[primaryName].penta_kills += parseInt(player.PENTA_KILLS || 0);
-							
 							// Add the character (skin) to the set
 							playerStats[primaryName].skins.add(player.SKIN);
 
@@ -136,6 +137,8 @@
 							} else {
 								playerStats[primaryName].losses++;
 							}
+							playerStats[primaryName].WinRate = 100*playerStats[primaryName].wins / playerStats[primaryName].matches || 0;
+							playerStats[primaryName].kda = (playerStats[primaryName].kills + playerStats[primaryName].assists) / playerStats[primaryName].deaths
 
 							participants.forEach(teammate => {
 								if (teammate.TEAM === team && teammate.NAME !== player.NAME) {
@@ -156,13 +159,16 @@
 											penta_kills: 0,
 											teammates: {},
 											skins: new Set(),
-											teammateWinRates: []
+											teammateWinRates: [],
+											WinRate: 0,
+											kda: 0
 										};
 									}
 									
 									// Calculate teammate win rate (using matches and wins)
 									const teammateWinRate = playerStats[teammateName].wins / playerStats[teammateName].matches || 0;
 									playerStats[primaryName].teammateWinRates.push(teammateWinRate);
+									
 								}
 							});
 						}
@@ -185,6 +191,8 @@
 			container.innerHTML = `
 				<h3>Stats for ${playerName}</h3>
 				<p><strong>Games Played:</strong> ${stats.matches}</p>
+				<p><strong>Winrate:</strong> ${stats.WinRate.toFixed(2)}%</p>
+				<p><strong>KDA:</strong> ${stats.kda.toFixed(2)}</p>
 				<p><strong>Wins:</strong> ${stats.wins}</p>
 				<p><strong>Losses:</strong> ${stats.losses}</p>
 				<p><strong>Kills:</strong> ${stats.kills}</p>
