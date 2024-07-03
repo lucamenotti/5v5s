@@ -1,0 +1,5 @@
+C:\Users\Luca\Documents\GitHub\5v5s\RoflBatchExporter\obj\Debug\net7.0\RoflBatchExporter.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Luca\Documents\GitHub\5v5s\RoflBatchExporter\obj\Debug\net7.0\RoflBatchExporter.AssemblyInfoInputs.cache
+C:\Users\Luca\Documents\GitHub\5v5s\RoflBatchExporter\obj\Debug\net7.0\RoflBatchExporter.AssemblyInfo.cs
+C:\Users\Luca\Documents\GitHub\5v5s\RoflBatchExporter\obj\Debug\net7.0\RoflBatchExporter.csproj.CoreCompileInputs.cache
+C:\Users\Luca\Documents\GitHub\5v5s\RoflBatchExporter\obj\Debug\net7.0\RoflBatchExporter.sourcelink.json
