@@ -238,8 +238,8 @@
                     <h4>Teammates</h4>
                     <ul>
                         ${sortedTeammates.map(([teammate, gamesWithTeammate]) => {
-                            const teammatePercentage = (gamesWithTeammate / stats.matches * 100).toFixed(2);
-                            return `<li>${teammate}: ${gamesWithTeammate} games (percent played: ${teammatePercentage}%)</li>`;
+                            const teammatePercentage = (gamesWithTeammate / stats.matches * 100).toFixed(0);
+                            return `<li>${teammate}: ${gamesWithTeammate} games (${teammatePercentage}% of total)</li>`;
                         }).join('')}
                     </ul>
                 </div>
