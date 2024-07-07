@@ -10,15 +10,15 @@
         /* Custom CSS */
         body {
             padding: 20px;
-            font-family: 'Aceh', sans-serif; /* Apply Aceh font to the entire body */
+            font-family: 'Aceh', sans-serif;
             color: black;
         }
         h1, h2, h3, h4, h5, h6 {
-            font-family: 'Aceh', sans-serif; /* Apply Aceh font to all heading elements */
+            font-family: 'Aceh', sans-serif;
             color: black;
         }
         .dropdown-toggle, .dropdown-item {
-            font-family: 'Aceh', sans-serif; /* Apply Aceh font to dropdown menu */
+            font-family: 'Aceh', sans-serif;
             color: black;
         }
         .stats-container {
@@ -28,23 +28,18 @@
             text-align: center;
             margin-top: 50px;
         }
-		* {
-			box-sizing: border-box;
-		}
-		/* Create two equal columns that floats next to each other */
-		.column {
-			float: left;
-			width: 33.3333333%;
-			padding: 10px;
-			height: 800px; /* Should be removed. Only for demonstration */
-		}
-
-		/* Clear floats after the columns */
-		.row:after {
-			content: "";
-			display: table;
-			clear: both;
-		}
+        .column {
+            padding: 10px;
+        }
+        .col1 {
+            background-color: #e0e0e0;
+        }
+        .col2 {
+            background-color: #c0c0c0;
+        }
+        .col3 {
+            background-color: #a0a0a0;
+        }
     </style>
 </head>
 <body style="background-color:rgb(255, 255, 255);">
@@ -59,8 +54,9 @@
             </ul>
         </div>
         <div class="stats-container">
-            <!-- Player stats will be displayed here -->
-            <div id="playerStats" class="mt-4"></div>
+            <div id="playerStats" class="row mt-4">
+                <!-- Player stats will be displayed here in three columns -->
+            </div>
         </div>
     </div>
 
@@ -68,77 +64,57 @@
 
     <script>
         // GitHub API details
-		const owner = 'lucamenotti';
-		const repo = '5v5s';
-		const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents`;
+        const owner = 'lucamenotti';
+        const repo = '5v5s';
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents`;
 
-		// Optionally include a GitHub token for authentication (if needed)
-		//const token = 'ENTER TOKEN HERE'; // Uncomment and replace with your GitHub token if needed
+        async function fetchFilesFromGitHub(path = '') {
+            try {
+                const url = `${apiUrl}/${path}`;
+                const response = await fetch(url);
 
-		async function fetchFilesFromGitHub(path = '') {
-			try {
-				const url = `${apiUrl}/${path}`;
-				const headers = {
-					// Include authorization header if token is provided
-					// 'Authorization': `token ${token}` // Uncomment this line if using a GitHub token
-				};
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok: ${response.statusText}`);
+                }
 
-				const response = await fetch(url, { headers });
+                const files = await response.json();
+                const jsonFiles = [];
 
-				if (!response.ok) {
-					// Log detailed information if the network response was not okay
-					console.error(`Failed to fetch: ${url}`);
-					console.error(`Status: ${response.status} - ${response.statusText}`);
-					throw new Error(`Network response was not ok: ${response.statusText}`);
-				}
+                for (const file of files) {
+                    if (file.type === 'file' && file.name.endsWith('.json')) {
+                        jsonFiles.push(file.download_url);
+                    } else if (file.type === 'dir') {
+                        jsonFiles.push(...await fetchFilesFromGitHub(file.path));
+                    }
+                }
 
-				const files = await response.json();
+                return jsonFiles;
+            } catch (error) {
+                console.error('Error fetching files from GitHub:', error);
+                return [];
+            }
+        }
 
-				if (!Array.isArray(files)) {
-					throw new Error(`Expected an array but got ${typeof files}`);
-				}
-
-				const jsonFiles = [];
-
-				for (const file of files) {
-					if (file.type === 'file' && file.name.endsWith('.json')) {
-						jsonFiles.push(file.download_url);
-					} else if (file.type === 'dir') {
-						jsonFiles.push(...await fetchFilesFromGitHub(file.path));
-					}
-				}
-
-				return jsonFiles;
-			} catch (error) {
-				console.error('Error fetching files from GitHub:', error);
-				return []; // Return an empty array if there's an error
-			}
-		}
-
-
-        // Function to fetch JSON data from URL
         async function fetchJsonFromUrl(url) {
             const response = await fetch(url);
             return await response.json();
         }
 
-        // Player stats and alias mapping
         const playerAliases = {
             'EnderDragon7474': 'Ashalo1',
             'Ashalo1': 'Ashalo1',
             'RaVe B00ST': 'Bryant',
             'CoomerHashira': 'Bryant',
             'Item Diversity': 'BloodStainedRose',
-            'BigPeTe1239': 'DookieDemon12'
-            // Add more mappings as needed
+            'BigPeTe1239': 'DookieDemon12',
+            'SkyMaster3o5': 'Chris',
+            'trunksthefuture': 'Chris'
         };
 
-        // Function to get primary player name
         function getPrimaryName(name) {
             return playerAliases[name] || name;
         }
 
-        // Function to fetch and process player data
         async function fetchAndProcessPlayerData() {
             const jsonFilesUrls = await fetchFilesFromGitHub();
             const playerStats = {};
@@ -164,7 +140,7 @@
                                     assists: 0,
                                     penta_kills: 0,
                                     teammates: {},
-                                    skins: {}, // To store character counts
+                                    skins: {},
                                     teammateWinRates: [],
                                     WinRate: 0,
                                     kda: 0
@@ -177,7 +153,6 @@
                             playerStats[primaryName].deaths += parseInt(player.NUM_DEATHS || 0);
                             playerStats[primaryName].penta_kills += parseInt(player.PENTA_KILLS || 0);
 
-                            // Increment the count of the character played
                             if (!playerStats[primaryName].skins[player.SKIN]) {
                                 playerStats[primaryName].skins[player.SKIN] = 0;
                             }
@@ -195,10 +170,8 @@
                                 if (teammate.TEAM === team && teammate.NAME !== player.NAME) {
                                     const teammateName = getPrimaryName(teammate.NAME);
 
-                                    // Update the number of games played with each teammate
                                     playerStats[primaryName].teammates[teammateName] = (playerStats[primaryName].teammates[teammateName] || 0) + 1;
 
-                                    // Collect win rate data of teammates
                                     if (!playerStats[teammateName]) {
                                         playerStats[teammateName] = {
                                             matches: 0,
@@ -216,7 +189,6 @@
                                         };
                                     }
 
-                                    // Calculate teammate win rate (using matches and wins)
                                     const teammateWinRate = playerStats[teammateName].wins / playerStats[teammateName].matches || 0;
                                     playerStats[primaryName].teammateWinRates.push(teammateWinRate);
                                 }
@@ -229,59 +201,75 @@
             return playerStats;
         }
 
-        // Function to load player stats into the page
         function loadPlayerStats(playerName, stats) {
             const container = document.getElementById('playerStats');
 
-            // Calculate the average teammate win rate
             const avgTeammateWinRate = stats.teammateWinRates.length > 0
                 ? stats.teammateWinRates.reduce((acc, rate) => acc + rate, 0) / stats.teammateWinRates.length * 100
                 : 0;
 
+            // Sort skins by count in descending order
+            const sortedSkins = Object.entries(stats.skins).sort((a, b) => b[1] - a[1]);
+
+            // Sort teammates by games played in descending order
+            const sortedTeammates = Object.entries(stats.teammates).sort((a, b) => b[1] - a[1]);
+
             container.innerHTML = `
-                <div class="row">
-					<div class="column" style="background-color:#aaa;">
-						<h3>Stats for ${playerName}</h3>
-						<p><strong>Games Played:</strong> ${stats.matches}</p>
-						<p><strong>Winrate:</strong> ${stats.WinRate.toFixed(2)}%</p>
-						<p><strong>KDA:</strong> ${stats.kda.toFixed(2)}</p>
-						<p><strong>Wins:</strong> ${stats.wins}</p>
-						<p><strong>Losses:</strong> ${stats.losses}</p>
-						<p><strong>Kills:</strong> ${stats.kills}</p>
-						<p><strong>Deaths:</strong> ${stats.deaths}</p>
-						<p><strong>Assists:</strong> ${stats.assists}</p>
-						<p><strong>Penta Kills:</strong> ${stats.penta_kills}</p>
-						<p><strong>Average Teammate Win Rate:</strong> ${avgTeammateWinRate.toFixed(2)}%</p>
-					</div>
-					<div class="column" style="background-color:#bbb;">
-						<h4>Champions Played</h4>
-                		<ul>
-                    		${Object.entries(stats.skins).map(([skin, count]) => `<li>${skin}: ${count} </li>`).join('')}
-                		</ul>
-					</div>
-					<div class="column" style="background-color:#ccc;">
-						<h4>Teammates</h4>
-						<ul>
-                    		${Object.keys(stats.teammates).map(teammate => `<li>${teammate}: ${stats.teammates[teammate]} games</li>`).join('')}
-                		</ul>
-					</div>
-					</div>
-                
+                <div class="col-lg-4 col-md-6 col-sm-12 column col1">
+                    <h3>Stats for ${playerName}</h3>
+                    <p><strong>Games Played:</strong> ${stats.matches}</p>
+                    <p><strong>Winrate:</strong> ${stats.WinRate.toFixed(2)}%</p>
+                    <p><strong>KDA:</strong> ${stats.kda.toFixed(2)}</p>
+                    <p><strong>Wins:</strong> ${stats.wins}</p>
+                    <p><strong>Losses:</strong> ${stats.losses}</p>
+                    <p><strong>Kills:</strong> ${stats.kills}</p>
+                    <p><strong>Deaths:</strong> ${stats.deaths}</p>
+                    <p><strong>Assists:</strong> ${stats.assists}</p>
+                    <p><strong>Penta Kills:</strong> ${stats.penta_kills}</p>
+                    <p><strong>Average Teammate Win Rate:</strong> ${avgTeammateWinRate.toFixed(2)}%</p>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 column col2">
+                    <h4>Champions Played</h4>
+                    <ul>
+                        ${sortedSkins.map(([skin, count]) => `<li>${skin}: ${count}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-12 column col3">
+                    <h4>Teammates</h4>
+                    <ul>
+                        ${sortedTeammates.map(([teammate, gamesWithTeammate]) => {
+                            const teammatePercentage = (gamesWithTeammate / stats.matches * 100).toFixed(2);
+                            return `<li>${teammate}: ${gamesWithTeammate} games (${teammatePercentage}%)</li>`;
+                        }).join('')}
+                    </ul>
+                </div>
             `;
         }
 
         // Function to initialize the dropdown menu and load player data
         async function initialize() {
             const loadingIndicator = document.getElementById('loading');
-            const playerStats = await fetchAndProcessPlayerData();
-            const playerNames = Object.keys(playerStats).sort();
+
+            // Check if player stats are cached in local storage
+            let playerStats = localStorage.getItem('playerStats');
+
+            if (playerStats) {
+                // Parse the cached stats if they exist
+                playerStats = JSON.parse(playerStats);
+            } else {
+                // Fetch and process player data if not cached
+                playerStats = await fetchAndProcessPlayerData();
+            }
+
+            // Sort player names by number of games played in descending order
+            const sortedPlayerNames = Object.keys(playerStats).sort((a, b) => playerStats[b].matches - playerStats[a].matches);
 
             const dropdownMenu = document.querySelector('.dropdown-menu');
-            playerNames.forEach(playerName => {
+            sortedPlayerNames.forEach(playerName => {
                 const playerItem = document.createElement('a');
                 playerItem.className = 'dropdown-item';
                 playerItem.href = '#';
-                playerItem.innerText = playerName;
+                playerItem.innerText = `${playerName} (${playerStats[playerName].matches} games)`;
 
                 playerItem.addEventListener('click', () => loadPlayerStats(playerName, playerStats[playerName]));
 
