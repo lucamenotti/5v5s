@@ -28,11 +28,28 @@
             text-align: center;
             margin-top: 50px;
         }
+		* {
+			box-sizing: border-box;
+		}
+		/* Create two equal columns that floats next to each other */
+		.column {
+			float: left;
+			width: 33.3333333%;
+			padding: 10px;
+			height: 800px; /* Should be removed. Only for demonstration */
+		}
+
+		/* Clear floats after the columns */
+		.row:after {
+			content: "";
+			display: table;
+			clear: both;
+		}
     </style>
 </head>
-<body style="background-color:rgb(86, 86, 146);">
+<body style="background-color:rgb(255, 255, 255);">
     <div class="container">
-        <h1 class="text-center">Player Stats</h1>
+        <h1 class="text-center">5v5 Stats</h1>
         <div class="dropdown mt-3">
             <button class="btn btn-primary dropdown-toggle" type="button" id="playerDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                 Select Player
@@ -56,7 +73,7 @@
 		const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents`;
 
 		// Optionally include a GitHub token for authentication (if needed)
-		// const token = 'YOUR_GITHUB_TOKEN'; // Uncomment and replace with your GitHub token if needed
+		//const token = 'ENTER TOKEN HERE'; // Uncomment and replace with your GitHub token if needed
 
 		async function fetchFilesFromGitHub(path = '') {
 			try {
@@ -222,25 +239,34 @@
                 : 0;
 
             container.innerHTML = `
-                <h3>Stats for ${playerName}</h3>
-                <p><strong>Games Played:</strong> ${stats.matches}</p>
-                <p><strong>Winrate:</strong> ${stats.WinRate.toFixed(2)}%</p>
-                <p><strong>KDA:</strong> ${stats.kda.toFixed(2)}</p>
-                <p><strong>Wins:</strong> ${stats.wins}</p>
-                <p><strong>Losses:</strong> ${stats.losses}</p>
-                <p><strong>Kills:</strong> ${stats.kills}</p>
-                <p><strong>Deaths:</strong> ${stats.deaths}</p>
-                <p><strong>Assists:</strong> ${stats.assists}</p>
-                <p><strong>Penta Kills:</strong> ${stats.penta_kills}</p>
-                <p><strong>Average Teammate Win Rate:</strong> ${avgTeammateWinRate.toFixed(2)}%</p>
-                <h4>Champions Played</h4>
-                <ul>
-                    ${Object.entries(stats.skins).map(([skin, count]) => `<li>${skin}: ${count} times</li>`).join('')}
-                </ul>
-                <h4>Teammates</h4>
-                <ul>
-                    ${Object.keys(stats.teammates).map(teammate => `<li>${teammate}: ${stats.teammates[teammate]} games</li>`).join('')}
-                </ul>
+                <div class="row">
+					<div class="column" style="background-color:#aaa;">
+						<h3>Stats for ${playerName}</h3>
+						<p><strong>Games Played:</strong> ${stats.matches}</p>
+						<p><strong>Winrate:</strong> ${stats.WinRate.toFixed(2)}%</p>
+						<p><strong>KDA:</strong> ${stats.kda.toFixed(2)}</p>
+						<p><strong>Wins:</strong> ${stats.wins}</p>
+						<p><strong>Losses:</strong> ${stats.losses}</p>
+						<p><strong>Kills:</strong> ${stats.kills}</p>
+						<p><strong>Deaths:</strong> ${stats.deaths}</p>
+						<p><strong>Assists:</strong> ${stats.assists}</p>
+						<p><strong>Penta Kills:</strong> ${stats.penta_kills}</p>
+						<p><strong>Average Teammate Win Rate:</strong> ${avgTeammateWinRate.toFixed(2)}%</p>
+					</div>
+					<div class="column" style="background-color:#bbb;">
+						<h4>Champions Played</h4>
+                		<ul>
+                    		${Object.entries(stats.skins).map(([skin, count]) => `<li>${skin}: ${count} </li>`).join('')}
+                		</ul>
+					</div>
+					<div class="column" style="background-color:#ccc;">
+						<h4>Teammates</h4>
+						<ul>
+                    		${Object.keys(stats.teammates).map(teammate => `<li>${teammate}: ${stats.teammates[teammate]} games</li>`).join('')}
+                		</ul>
+					</div>
+					</div>
+                
             `;
         }
 
